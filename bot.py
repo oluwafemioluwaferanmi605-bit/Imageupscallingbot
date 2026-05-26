@@ -4,15 +4,16 @@ import requests
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 
-# Enable logging
+# Enable logging to see what the bot is doing in Render
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# =======================================================
-# HARDCODED FIX: Put your actual text keys inside the quotes
-# =======================================================
-TELEGRAM_TOKEN = "PASTE_YOUR_BOT_TOKEN_HERE"
+# ====================================================================
+# 🛠️ FIX HERE: Delete the instructions below and paste your real keys!
+# ====================================================================
+TELEGRAM_TOKEN = "PASTE_YOUR_TELEGRAM_BOT_TOKEN_HERE"
 UPSCALE_API_KEY = "PASTE_YOUR_UPSCALER_API_KEY_HERE"
+# ====================================================================
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Sends a greeting message when /start is issued."""
@@ -23,10 +24,11 @@ async def process_image(update: Update, context: ContextTypes.DEFAULT_TYPE):
     status_message = await update.message.reply_text("⚡ Processing your image... Please wait.")
     
     try:
-        # Get highest resolution image
+        # 1. Get the highest resolution version of the photo sent
         photo = update.message.photo[-1]
         tg_file = await context.bot.get_file(photo.file_id)
         
+        # Download the file into memory
         image_url = tg_file.file_path
         img_response = requests.get(image_url)
         
@@ -35,15 +37,18 @@ async def process_image(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         await status_message.edit_text("🤖 AI is enhancing your image pixels...")
         
-        # Example using Clipdrop API endpoint
+        # 2. Setup the Clipdrop API request (or your preferred upscaler endpoint)
         api_url = "https://api.clipdrop.co/image-upscaling/v1" 
         headers = {"x-api-key": UPSCALE_API_KEY}
         files = {"image_file": ("image.jpg", img_response.content, "image/jpeg")}
+        
+        # Requesting a 2x upscale based on original image size
         data = {"target_width": photo.width * 2, "target_height": photo.height * 2} 
 
         upscale_response = requests.post(api_url, headers=headers, files=files, data=data)
 
         if upscale_response.status_code == 200:
+            # 3. Send the upscaled file back as an uncompressed document
             await status_message.edit_text("📤 Uploading your high-res image...")
             await update.message.reply_document(
                 document=upscale_response.content,
@@ -61,7 +66,7 @@ async def process_image(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 def main():
     """Start the bot."""
-    # Ensure placeholders were modified
+    # Safety Check: Ensures you replaced the filler text before running
     if "PASTE_YOUR_" in TELEGRAM_TOKEN or "PASTE_YOUR_" in UPSCALE_API_KEY:
         logger.critical("CRITICAL: You forgot to replace the placeholder text with your real tokens!")
         return
