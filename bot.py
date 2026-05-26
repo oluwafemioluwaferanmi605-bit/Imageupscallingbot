@@ -4,15 +4,15 @@ import requests
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 
-# Enable logging to see what the bot is doing in Render
+# Enable logging to track bot health in the Render dashboard
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # ====================================================================
-# 🛠️ FIX HERE: Delete the instructions below and paste your real keys!
+# 🛠️ PASTE YOUR SECRETS BETWEEN THE QUOTES BELOW:
 # ====================================================================
-TELEGRAM_TOKEN = "PASTE_YOUR_TELEGRAM_BOT_TOKEN_HERE"
-UPSCALE_API_KEY = "PASTE_YOUR_UPSCALER_API_KEY_HERE"
+TELEGRAM_TOKEN = "PUT_YOUR_TELEGRAM_TOKEN_HERE"
+UPSCALE_API_KEY = "PUT_YOUR_UPSCALER_KEY_HERE"
 # ====================================================================
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -24,11 +24,11 @@ async def process_image(update: Update, context: ContextTypes.DEFAULT_TYPE):
     status_message = await update.message.reply_text("⚡ Processing your image... Please wait.")
     
     try:
-        # 1. Get the highest resolution version of the photo sent
+        # Get highest resolution image version
         photo = update.message.photo[-1]
         tg_file = await context.bot.get_file(photo.file_id)
         
-        # Download the file into memory
+        # Download file to memory
         image_url = tg_file.file_path
         img_response = requests.get(image_url)
         
@@ -37,18 +37,15 @@ async def process_image(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         await status_message.edit_text("🤖 AI is enhancing your image pixels...")
         
-        # 2. Setup the Clipdrop API request (or your preferred upscaler endpoint)
+        # Call the Upscaling API (Clipdrop Endpoint Structure)
         api_url = "https://api.clipdrop.co/image-upscaling/v1" 
         headers = {"x-api-key": UPSCALE_API_KEY}
         files = {"image_file": ("image.jpg", img_response.content, "image/jpeg")}
-        
-        # Requesting a 2x upscale based on original image size
         data = {"target_width": photo.width * 2, "target_height": photo.height * 2} 
 
         upscale_response = requests.post(api_url, headers=headers, files=files, data=data)
 
         if upscale_response.status_code == 200:
-            # 3. Send the upscaled file back as an uncompressed document
             await status_message.edit_text("📤 Uploading your high-res image...")
             await update.message.reply_document(
                 document=upscale_response.content,
@@ -66,19 +63,19 @@ async def process_image(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 def main():
     """Start the bot."""
-    # Safety Check: Ensures you replaced the filler text before running
-    if "PASTE_YOUR_" in TELEGRAM_TOKEN or "PASTE_YOUR_" in UPSCALE_API_KEY:
-        logger.critical("CRITICAL: You forgot to replace the placeholder text with your real tokens!")
+    # Safety Check: Ensures you modified the configuration values before executing
+    if "PUT_YOUR_" in TELEGRAM_TOKEN or "PUT_YOUR_" in UPSCALE_API_KEY:
+        logger.critical("CRITICAL: You forgot to replace the placeholder text with your real active tokens!")
         return
 
-    # Create the Application
+    # Create the Application connection
     application = Application.builder().token(TELEGRAM_TOKEN).build()
 
-    # Register handlers
+    # Register text and photo handlers
     application.add_handler(CommandHandler("start", start))
     application.add_handler(MessageHandler(filters.PHOTO, process_image))
 
-    # Run the bot using Polling
+    # Run the bot using standard long polling
     logger.info("Bot is starting up successfully...")
     application.run_polling()
 
