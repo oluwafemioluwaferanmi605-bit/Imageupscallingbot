@@ -9,11 +9,11 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
 logger = logging.getLogger(__name__)
 
 # ====================================================================
-# 🛠️ CONFIGURATION: Paste your real keys and Render URL here!
+# 🛠️ EVERYTHING YOU NEED TO FIX IS RIGHT HERE:
 # ====================================================================
-TELEGRAM_TOKEN = "PUT_YOUR_TELEGRAM_TOKEN_HERE"
-UPSCALE_API_KEY = "PUT_YOUR_UPSCALER_KEY_HERE"
-RENDER_WEB_URL = "https://your-subdomain.onrender.com"  # e.g., https://my-bot.onrender.com
+TELEGRAM_TOKEN = "PUT_YOUR_ACTUAL_TELEGRAM_BOT_TOKEN_HERE"
+UPSCALE_API_KEY = "PUT_YOUR_ACTUAL_CLIPDROP_API_KEY_HERE"
+RENDER_WEB_URL = "https://imageupscallingbot.onrender.com" 
 # ====================================================================
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -76,7 +76,7 @@ def main():
     application.add_handler(CommandHandler("start", start))
     application.add_handler(MessageHandler(filters.PHOTO, process_image))
 
-    # Render supplies a PORT environment variable automatically. We default to 8000 locally.
+    # Render supplies a PORT environment variable automatically. Defaults to 8000 locally.
     port = int(os.environ.get("PORT", 8000))
 
     logger.info(f"Starting Web Service on port {port} using webhook...")
