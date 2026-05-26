@@ -4,15 +4,16 @@ import requests
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 
-# Enable logging to track bot health in the Render dashboard
+# Enable logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # ====================================================================
-# 🛠️ PASTE YOUR SECRETS BETWEEN THE QUOTES BELOW:
+# 🛠️ CONFIGURATION: Paste your real keys and Render URL here!
 # ====================================================================
 TELEGRAM_TOKEN = "PUT_YOUR_TELEGRAM_TOKEN_HERE"
 UPSCALE_API_KEY = "PUT_YOUR_UPSCALER_KEY_HERE"
+RENDER_WEB_URL = "https://your-subdomain.onrender.com"  # e.g., https://my-bot.onrender.com
 # ====================================================================
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -62,10 +63,10 @@ async def process_image(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await status_message.edit_text("❌ Something went wrong while processing your image.")
 
 def main():
-    """Start the bot."""
+    """Start the bot using Webhooks."""
     # Safety Check: Ensures you modified the configuration values before executing
-    if "PUT_YOUR_" in TELEGRAM_TOKEN or "PUT_YOUR_" in UPSCALE_API_KEY:
-        logger.critical("CRITICAL: You forgot to replace the placeholder text with your real active tokens!")
+    if "PUT_YOUR_" in TELEGRAM_TOKEN or "PUT_YOUR_" in UPSCALE_API_KEY or "your-subdomain" in RENDER_WEB_URL:
+        logger.critical("CRITICAL: You forgot to replace the placeholder tokens or the Render URL!")
         return
 
     # Create the Application connection
@@ -75,9 +76,18 @@ def main():
     application.add_handler(CommandHandler("start", start))
     application.add_handler(MessageHandler(filters.PHOTO, process_image))
 
-    # Run the bot using standard long polling
-    logger.info("Bot is starting up successfully...")
-    application.run_polling()
+    # Render supplies a PORT environment variable automatically. We default to 8000 locally.
+    port = int(os.environ.get("PORT", 8000))
+
+    logger.info(f"Starting Web Service on port {port} using webhook...")
+    
+    # Run using webhook instead of run_polling()
+    application.run_webhook(
+        listen="0.0.0.0",
+        port=port,
+        url_path=TELEGRAM_TOKEN,
+        webhook_url=f"{RENDER_WEB_URL}/{TELEGRAM_TOKEN}"
+    )
 
 if __name__ == "__main__":
     main()
